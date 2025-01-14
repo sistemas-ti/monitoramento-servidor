@@ -2,12 +2,20 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
+// Defina os domínios permitidos para CORS.
+// Em produção, inclua a URL do seu front-end hospedado no Vercel.
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? ['https://monitoramento-frontend-zeta.vercel.app'] // Você pode adicionar mais domínios se necessário
+  : ['http://localhost:3000'];
+
 app.use(cors({
-    origin: 'http://localhost:3000', // Permitindo origem localhost:3000
+    origin: allowedOrigins
 }));
+
 app.use(express.json());
 
-const PORT = 3001;
+// Utiliza a porta definida na variável de ambiente ou a porta 3001 para desenvolvimento local.
+const PORT = process.env.PORT || 3001;
 
 app.post('/status', (req, res) => {
     const { server } = req.body;
@@ -31,13 +39,12 @@ app.post('/status', (req, res) => {
     res.json(status);
 });
 
-// Middleware para erros
+// Middleware para tratamento de erros
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ error: "Ocorreu um erro no servidor." });
 });
 
-// Iniciando o servidor
 app.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
