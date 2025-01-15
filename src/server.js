@@ -2,49 +2,62 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
-// Defina os domínios permitidos para CORS.
-// Em produção, inclua a URL do seu front-end hospedado no Vercel.
+// Domínios permitidos
 const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? ['https://monitoramento-frontend-zeta.vercel.app'] // Você pode adicionar mais domínios se necessário
-  : ['http://localhost:3000'];
+  ? ['https://monitoramento-frontend-zeta.vercel.app'] // Substitua pelo domínio correto do frontend
+  : ['http://localhost:3000', 'http://127.0.0.1:3000']; // Permitir localhost para desenvolvimento
 
+// Configuração do CORS com validação de origem
 app.use(cors({
-    origin: allowedOrigins
+  origin: (origin, callback) => {
+    // Permitir requisições sem origem (ex: Postman ou backend)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.error(`Origem não permitida pelo CORS: ${origin}`);
+      callback(new Error(`Origem não permitida: ${origin}`));
+    }
+  },
 }));
 
+// Middleware para parsing de JSON
 app.use(express.json());
 
-// Utiliza a porta definida na variável de ambiente ou a porta 3001 para desenvolvimento local.
+// Porta de execução
 const PORT = process.env.PORT || 3001;
 
+// Endpoint para retornar status do servidor
 app.post('/status', (req, res) => {
-    const { server } = req.body;
+  const { server } = req.body;
 
-    if (!server) {
-        return res.status(400).json({
-            error: "O campo 'server' é obrigatório."
-        });
-    }
+  if (!server) {
+    console.error("Requisição inválida: Campo 'server' não enviado.");
+    return res.status(400).json({
+      error: "O campo 'server' é obrigatório."
+    });
+  }
 
-    console.log(`[${new Date().toISOString()}] Requisição recebida de: ${server}`);
+  console.log(`[${new Date().toISOString()}] Requisição recebida do servidor: ${server}`);
 
-    const status = {
-        server: server,
-        cpuUsage: `${(Math.random() * 100).toFixed(2)}%`,
-        memoryUsage: `${(Math.random() * 100).toFixed(2)}%`,
-        status: "Online",
-        timestamp: new Date().toISOString()
-    };
+  // Gerar dados fictícios de status
+  const status = {
+    server,
+    cpuUsage: `${(Math.random() * 100).toFixed(2)}%`,
+    memoryUsage: `${(Math.random() * 100).toFixed(2)}%`,
+    status: "Online",
+    timestamp: new Date().toISOString(),
+  };
 
-    res.json(status);
+  res.json(status);
 });
 
 // Middleware para tratamento de erros
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ error: "Ocorreu um erro no servidor." });
+  console.error(`[${new Date().toISOString()}] Erro no servidor:`, err.stack);
+  res.status(500).json({ error: "Ocorreu um erro no servidor. Por favor, tente novamente mais tarde." });
 });
 
+// Inicialização do servidor
 app.listen(PORT, () => {
-    console.log(`Servidor rodando em http://localhost:${PORT}`);
+  console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
