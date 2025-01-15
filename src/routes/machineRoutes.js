@@ -1,5 +1,5 @@
 const express = require("express");
-const MachineStatus = require("../db/models/MachineStatus");
+const MachineStatus = require("../db/models/MachineStatus"); // Caminho correto para o modelo
 
 const router = express.Router();
 
@@ -14,7 +14,7 @@ router.post("/", async (req, res) => {
   try {
     const newStatus = new MachineStatus({ machine, status });
     await newStatus.save();
-    res.status(201).json(newStatus); // Retorna o registro criado
+    res.status(201).json(newStatus);
   } catch (err) {
     console.error("Erro ao salvar status da máquina:", err);
     res.status(500).json({ error: "Erro ao salvar status da máquina." });
@@ -32,4 +32,4 @@ router.get("/", async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = router; // Certifique-se de que o router está sendo exportado corretamente
