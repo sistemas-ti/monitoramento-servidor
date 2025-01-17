@@ -41,7 +41,7 @@ cron.schedule("0 */10 * * *", async () => {
     // Busque os 100 registros mais antigos
     const registrosAntigos = await MachineStatus.find()
       .sort({ timestamp: 1 })
-      .limit(300);
+      .limit(250);
       
     if (registrosAntigos.length > 0) {
       const idsParaRemover = registrosAntigos.map(registro => registro._id);
