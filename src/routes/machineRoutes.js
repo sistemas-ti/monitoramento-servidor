@@ -1,10 +1,11 @@
-// routes/machineStatus.js (ou o nome que você estiver utilizando)
-// Certifique-se de que o caminho para o modelo MachineStatus está correto
+// routes/machineStatus.js (ou em um arquivo específico para tarefas agendadas)
 const express = require("express");
 const MachineStatus = require("../db/models/MachineStatus");
+const cron = require("node-cron"); // Importa o node-cron
 
 const router = express.Router();
 
+// Rotas existentes
 // Rota para salvar o status da máquina
 router.post("/", async (req, res) => {
   const { machine, status } = req.body;
@@ -16,18 +17,6 @@ router.post("/", async (req, res) => {
   try {
     const newStatus = new MachineStatus({ machine, status });
     await newStatus.save();
-
-    // Contagem total de registros na coleção
-    const totalRegistros = await MachineStatus.countDocuments();
-    
-    if (totalRegistros >= 50) {
-      // Define a data limite: registros com timestamp menor que essa data serão considerados antigos (mais de 1 dia)
-      const dataLimite = new Date(Date.now() - 86400000); // 1 dia atrás
-      // Remove os registros antigos
-      const resultado = await MachineStatus.deleteMany({ timestamp: { $lt: dataLimite } });
-      console.log(`Foram removidos ${resultado.deletedCount} registros antigos.`);
-    }
-
     res.status(201).json(newStatus);
   } catch (err) {
     console.error("Erro ao salvar status da máquina:", err);
@@ -43,6 +32,26 @@ router.get("/", async (req, res) => {
   } catch (err) {
     console.error("Erro ao buscar status das máquinas:", err);
     res.status(500).json({ error: "Erro ao buscar status das máquinas." });
+  }
+});
+
+// Agendamento da tarefa para remoção a cada 10 horas
+cron.schedule("0 */10 * * *", async () => {
+  try {
+    // Busque os 100 registros mais antigos
+    const registrosAntigos = await MachineStatus.find()
+      .sort({ timestamp: 1 })
+      .limit(100);
+      
+    if (registrosAntigos.length > 0) {
+      const idsParaRemover = registrosAntigos.map(registro => registro._id);
+      const resultado = await MachineStatus.deleteMany({ _id: { $in: idsParaRemover } });
+      console.log(`Cron job: Removidos ${resultado.deletedCount} registros em ${new Date().toLocaleString()}`);
+    } else {
+      console.log(`Cron job: Nenhum registro antigo encontrado para remover em ${new Date().toLocaleString()}`);
+    }
+  } catch (error) {
+    console.error("Erro ao executar o cron job:", error);
   }
 });
 
