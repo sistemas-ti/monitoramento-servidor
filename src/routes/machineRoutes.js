@@ -1,4 +1,3 @@
-// routes/machineStatus.js (ou em um arquivo específico para tarefas agendadas)
 const express = require("express");
 const MachineStatus = require("../db/models/MachineStatus");
 const cron = require("node-cron"); // Importa o node-cron
@@ -35,21 +34,12 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Agendamento da tarefa para remoção a cada 10 horas
-cron.schedule("0 */10 * * *", async () => {
+// Agendamento da tarefa para remoção de todos os registros a cada 1 hora
+cron.schedule("0 * * * *", async () => {
   try {
-    // Busque os 100 registros mais antigos
-    const registrosAntigos = await MachineStatus.find()
-      .sort({ timestamp: 1 })
-      .limit(250);
-      
-    if (registrosAntigos.length > 0) {
-      const idsParaRemover = registrosAntigos.map(registro => registro._id);
-      const resultado = await MachineStatus.deleteMany({ _id: { $in: idsParaRemover } });
-      console.log(`Cron job: Removidos ${resultado.deletedCount} registros em ${new Date().toLocaleString()}`);
-    } else {
-      console.log(`Cron job: Nenhum registro antigo encontrado para remover em ${new Date().toLocaleString()}`);
-    }
+    // Remover todos os registros
+    const resultado = await MachineStatus.deleteMany({});
+    console.log(`Cron job: Removidos ${resultado.deletedCount} registros em ${new Date().toLocaleString()}`);
   } catch (error) {
     console.error("Erro ao executar o cron job:", error);
   }
