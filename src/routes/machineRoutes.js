@@ -37,9 +37,16 @@ router.get("/", async (req, res) => {
 // Agendamento da tarefa para remoção de todos os registros a cada 1 hora
 cron.schedule("0 * * * *", async () => {
   try {
-    // Remover todos os registros
-    const resultado = await MachineStatus.deleteMany({});
-    console.log(`Cron job: Removidos ${resultado.deletedCount} registros em ${new Date().toLocaleString()}`);
+    // Contar o número de registros na coleção
+    const count = await MachineStatus.countDocuments();
+
+    // Se houver mais de 250 registros, realizar a remoção
+    if (count > 250) {
+      const resultado = await MachineStatus.deleteMany({});
+      console.log(`Cron job: Removidos ${resultado.deletedCount} registros em ${new Date().toLocaleString()}`);
+    } else {
+      console.log(`Cron job: Não há registros suficientes para remoção (atualmente ${count} registros).`);
+    }
   } catch (error) {
     console.error("Erro ao executar o cron job:", error);
   }
