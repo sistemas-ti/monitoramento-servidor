@@ -1,16 +1,18 @@
+// routes/machineStatus.js
 const express = require("express");
 const MachineStatus = require("../db/models/MachineStatus");
-const cron = require("node-cron"); // Importa o node-cron
+const cron = require("node-cron");
 
 const router = express.Router();
 
-// Rotas existentes
 // Rota para salvar o status da máquina
 router.post("/", async (req, res) => {
   const { machine, status } = req.body;
 
   if (!machine || !status) {
-    return res.status(400).json({ error: 'Os campos "machine" e "status" são obrigatórios.' });
+    return res
+      .status(400)
+      .json({ error: 'Os campos "machine" e "status" são obrigatórios.' });
   }
 
   try {
@@ -34,18 +36,20 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Agendamento da tarefa para remoção de todos os registros a cada 1 hora
+// Agendamento para remoção de todos os registros a cada 1 hora, se > 250 registros
 cron.schedule("0 * * * *", async () => {
   try {
-    // Contar o número de registros na coleção
     const count = await MachineStatus.countDocuments();
 
-    // Se houver mais de 250 registros, realizar a remoção
     if (count > 250) {
       const resultado = await MachineStatus.deleteMany({});
-      console.log(`Cron job: Removidos ${resultado.deletedCount} registros em ${new Date().toLocaleString()}`);
+      console.log(
+        `Cron job: Removidos ${resultado.deletedCount} registros em ${new Date().toLocaleString()}`
+      );
     } else {
-      console.log(`Cron job: Não há registros suficientes para remoção (atualmente ${count} registros).`);
+      console.log(
+        `Cron job: Não há registros suficientes para remoção (atualmente ${count} registros).`
+      );
     }
   } catch (error) {
     console.error("Erro ao executar o cron job:", error);
